@@ -5,7 +5,7 @@ authors = []
 telemetry = true
 cache_dir = "./.cache"
 
-# [contracts.counter-contract-on-stacks]
+# [contracts.counter-contract-v1]
 # path = "contracts/counter-contract-on-stacks.clar"
 
 [repl.analysis]
