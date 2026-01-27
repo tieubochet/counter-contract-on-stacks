@@ -1,4 +1,3 @@
-;; contracts/dolphin-nft.clar
 
 
 (define-non-fungible-token dolphin-streak-nft uint)
@@ -8,6 +7,7 @@
 (define-constant BLOCKS_PER_DAY u144)
 (define-constant ERR_NOT_CHECKED_IN u101)
 (define-constant ERR_ALREADY_MINTED_TODAY u106)
+(define-constant ERR_CONTRACT_CALL_FAILED u107) 
 
 
 (define-map last-mint-map principal uint)
@@ -16,26 +16,23 @@
   (/ burn-block-height BLOCKS_PER_DAY)
 )
 
-
 (define-public (mint)
   (let (
     (user tx-sender)
     (today (get-day-index))
     (next-id (+ (var-get last-token-id) u1))
     
-    (streak-data (unwrap-panic (contract-call? 'SPHMWZQ1KW03KHYPADC81Q6XXS284S7QCHRAS3A8.streak-reg get-user user)))
+
+    (streak-data (unwrap! (contract-call? 'SPHMWZQ1KW03KHYPADC81Q6XXS284S7QCHRAS3A8.streak-reg get-user user) (err ERR_CONTRACT_CALL_FAILED)))
     
     (user-last-check-in (get last-day streak-data))
-    
-
-    (user-last-mint (default-to u999999 (map-get? last-mint-map user))) 
-
+    (user-last-mint (default-to u999999 (map-get? last-mint-map user)))
   )
 
     (asserts! (is-eq today user-last-check-in) (err ERR_NOT_CHECKED_IN))
-    
     (asserts! (or (is-eq user-last-mint u999999) (< user-last-mint today)) (err ERR_ALREADY_MINTED_TODAY))
 
+ 
     (try! (nft-mint? dolphin-streak-nft next-id user))
     
     (map-set last-mint-map user today)
@@ -45,7 +42,7 @@
   )
 )
 
-
+;; SIP-009 Standard
 (define-read-only (get-last-token-id)
   (ok (var-get last-token-id))
 )
