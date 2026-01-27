@@ -1,12 +1,10 @@
-
+;; contracts/dolphin-nft.clar
 
 (define-non-fungible-token dolphin-streak-nft uint)
 (define-data-var last-token-id uint u0)
 
-
 (define-constant BLOCKS_PER_DAY u144)
 (define-constant ERR_ALREADY_MINTED_TODAY u106)
-
 
 (define-map last-mint-map principal uint)
 
@@ -14,22 +12,19 @@
   (/ burn-block-height BLOCKS_PER_DAY)
 )
 
+
 (define-public (mint)
   (let (
     (user tx-sender)
     (today (get-day-index))
     (next-id (+ (var-get last-token-id) u1))
-    
-
     (user-last-mint (default-to u999999 (map-get? last-mint-map user)))
   )
-
+    
     (asserts! (or (is-eq user-last-mint u999999) (< user-last-mint today)) (err ERR_ALREADY_MINTED_TODAY))
 
-
-    (try! (nft-mint? dolphin-streak-nft next-id user))
     
-
+    (try! (nft-mint? dolphin-streak-nft next-id user))
     (map-set last-mint-map user today)
     (var-set last-token-id next-id)
     
