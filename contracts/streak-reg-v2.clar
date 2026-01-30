@@ -1,4 +1,4 @@
-;; contracts/streak-reg-v2.clar 
+;; contracts/streak-reg-v2.clar
 
 (define-constant BLOCKS_PER_DAY u144)
 
@@ -7,9 +7,7 @@
 (define-constant ERR_ALREADY_SPUN u102)
 (define-constant ERR_ALREADY_VOTED u103)
 
-
-(define-constant SHIELD_PRICE u100000)
-
+(define-constant SHIELD_PRICE u5000000)
 
 (define-map user-state
   principal
@@ -19,7 +17,7 @@
     best-streak: uint,
     last-spin-day: uint,
     last-vote-day: uint,
-    shields: uint ;; 
+    shields: uint
   }
 )
 
@@ -27,11 +25,9 @@
 (define-map streak-sbt uint principal)
 (define-data-var next-token-id uint u1)
 
-
 (define-read-only (get-day-index)
   (/ burn-block-height BLOCKS_PER_DAY)
 )
-
 
 (define-read-only (get-user (user principal))
   (default-to
@@ -41,12 +37,11 @@
       best-streak: u0,
       last-spin-day: u0,
       last-vote-day: u0,
-      shields: u0 
+      shields: u0
     }
     (map-get? user-state user)
   )
 )
-
 
 (define-read-only (streak-level (streak uint))
   (if (>= streak u30) u3 (if (>= streak u14) u2 (if (>= streak u7) u1 u0)))
@@ -69,51 +64,40 @@
         (user (get-user tx-sender))
         (last-day (get last-day user))
         (current-streak (get streak user))
-        (current-shields (get shields user)) 
+        (current-shields (get shields user))
        )
     (if (is-eq today last-day)
         (err ERR_ALREADY_CHECKED_IN)
 
         (let (
-              
               (calc-result 
                 (if (is-eq today (+ last-day u1))
-                    
                     { s: (+ current-streak u1), sh: current-shields }
-                    
-                    
                     (if (and (> current-shields u0) (> current-streak u0))
-                        
                         { s: (+ current-streak u1), sh: (- current-shields u1) }
-                        
                         { s: u1, sh: current-shields }
                     )
                 )
               )
               (new-streak (get s calc-result))
               (new-shields (get sh calc-result))
-              
               (best (if (> new-streak (get best-streak user)) new-streak (get best-streak user)))
-              
               
               (reward-amount (+ u10 (* new-streak u2)))
              )
           (begin
-            
             (map-set user-state tx-sender {
               last-day: today,
               streak: new-streak,
               best-streak: best,
               last-spin-day: (get last-spin-day user),
               last-vote-day: (get last-vote-day user),
-              shields: new-shields 
+              shields: new-shields
             })
-            
             
             (mint-or-upgrade-sbt tx-sender new-streak)
             
-            
-            (as-contract (contract-call? .streak-token-v2 mint reward-amount tx-sender))
+            (try! (as-contract (contract-call? .streak-token-v2 mint reward-amount tx-sender)))
             
             (ok {
               action: "check-in",
@@ -128,20 +112,15 @@
   )
 )
 
-
 (define-public (buy-shield)
   (let (
     (user (get-user tx-sender))
   )
-    
     (try! (stx-transfer? SHIELD_PRICE tx-sender (as-contract tx-sender)))
-    
-    
     (map-set user-state tx-sender (merge user { shields: (+ (get shields user) u1) }))
     (ok true)
   )
 )
-
 
 (define-read-only (calculate-reward (streak uint)) (mod (+ burn-block-height streak) u4))
 
