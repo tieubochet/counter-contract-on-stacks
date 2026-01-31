@@ -1,4 +1,4 @@
-;; contracts/teeboo-nft-v2.clar
+
 
 (impl-trait 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait)
 
@@ -60,7 +60,7 @@
 
 (define-public (evolve (id1 uint) (id2 uint) (id3 uint) (id4 uint) (id5 uint))
   (let ((new-id (+ (var-get last-token-id) u1)))
-    ;; Đốt 5 NFT cũ
+
     (try! (burn-check id1 tx-sender))
     (try! (burn-check id2 tx-sender))
     (try! (burn-check id3 tx-sender))
